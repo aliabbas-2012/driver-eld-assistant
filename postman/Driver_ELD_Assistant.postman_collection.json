@@ -1,0 +1,254 @@
+{
+  "info": {
+    "_postman_id": "a1b2c3d4-eld-assistant-api",
+    "name": "Driver ELD Assistant API",
+    "description": "Django REST + JWT. Default user after `manage.py seed_demo`: demodriver / demo12345",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://127.0.0.1:8000"
+    },
+    {
+      "key": "access",
+      "value": ""
+    },
+    {
+      "key": "refresh",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "GET Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/api/health/"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "POST Register (new carrier)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"newdriver1\",\n  \"email\": \"newdriver1@example.com\",\n  \"password\": \"SecurePass123\",\n  \"password_confirm\": \"SecurePass123\",\n  \"full_name\": \"Taylor Smith\",\n  \"license_state\": \"WI\",\n  \"license_number\": \"W9876543\",\n  \"carrier\": {\n    \"name\": \"North Star Transport\",\n    \"main_office_street\": \"100 Main St\",\n    \"main_office_city\": \"Milwaukee\",\n    \"main_office_state\": \"WI\",\n    \"main_office_zip\": \"53202\",\n    \"home_terminal_street\": \"200 Depot Rd\",\n    \"home_terminal_city\": \"Milwaukee\",\n    \"home_terminal_state\": \"WI\",\n    \"home_terminal_zip\": \"53204\"\n  }\n}"
+            },
+            "url": "{{base_url}}/api/auth/register/"
+          }
+        },
+        {
+          "name": "POST Register (existing carrier_id)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"newdriver2\",\n  \"email\": \"newdriver2@example.com\",\n  \"password\": \"SecurePass123\",\n  \"password_confirm\": \"SecurePass123\",\n  \"full_name\": \"Casey Jones\",\n  \"license_state\": \"IL\",\n  \"license_number\": \"J5554443\",\n  \"carrier_id\": 1\n}"
+            },
+            "url": "{{base_url}}/api/auth/register/"
+          }
+        },
+        {
+          "name": "POST Token (login)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "if (json.access) { pm.collectionVariables.set('access', json.access); }",
+                  "if (json.refresh) { pm.collectionVariables.set('refresh', json.refresh); }"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"demodriver\",\n  \"password\": \"demo12345\"\n}"
+            },
+            "url": "{{base_url}}/api/auth/token/"
+          }
+        },
+        {
+          "name": "POST Token refresh",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh\": \"{{refresh}}\"\n}"
+            },
+            "url": "{{base_url}}/api/auth/token/refresh/"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Carriers",
+      "item": [
+        {
+          "name": "GET Carriers (public list for registration)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/api/carriers/"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Me",
+      "item": [
+        {
+          "name": "GET Me",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/api/me/"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Trips",
+      "item": [
+        {
+          "name": "GET Trips",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/api/trips/"
+          }
+        },
+        {
+          "name": "POST Trip (minimal draft)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"vehicle\": 1,\n  \"current_location\": \"Dallas, TX\",\n  \"pickup_location\": \"Austin, TX\",\n  \"dropoff_location\": \"Houston, TX\",\n  \"miles_current_to_pickup\": \"195\",\n  \"miles_pickup_to_dropoff\": \"165\",\n  \"total_route_miles\": \"360\",\n  \"estimated_driving_hours\": \"7\",\n  \"cycle_used_hours_8day\": \"12\",\n  \"timezone\": \"America/Chicago\",\n  \"shipping_document_number\": \"BOL-TEST-001\",\n  \"shipper_name\": \"Test Shipper\",\n  \"commodity\": \"Dry van freight\"\n}"
+            },
+            "url": "{{base_url}}/api/trips/"
+          }
+        },
+        {
+          "name": "GET Trip by id",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/api/trips/1/"
+          }
+        },
+        {
+          "name": "PATCH Trip",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"notes\": \"Updated from Postman\"\n}"
+            },
+            "url": "{{base_url}}/api/trips/1/"
+          }
+        }
+      ]
+    }
+  ]
+}
