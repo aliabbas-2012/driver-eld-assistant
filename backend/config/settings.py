@@ -15,6 +15,7 @@ from pathlib import Path
 
 import os
 
+from corsheaders.defaults import default_headers
 from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -57,24 +58,57 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
-    'django.middleware.security.SecurityMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
-    'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    "django.middleware.security.SecurityMiddleware",
+    # As early as possible so OPTIONS / redirect responses include CORS headers (django-cors-headers).
+    "corsheaders.middleware.CorsMiddleware",
+    "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.common.CommonMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django.contrib.messages.middleware.MessageMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-] + [
-    o.strip()
-    for o in os.environ.get("CORS_EXTRA_ORIGINS", "").split(",")
-    if o.strip()
-]
+
+def _parse_cors_origins(raw: str) -> list[str]:
+    """Split env list; strip whitespace; drop trailing slashes (Origin never includes them)."""
+    if not raw.strip():
+        return []
+    out: list[str] = []
+    for chunk in raw.replace("|", ",").replace("\n", ",").split(","):
+        s = chunk.strip()
+        if not s:
+            continue
+        while s.endswith("/"):
+            s = s[:-1]
+        if s not in out:
+            out.append(s)
+    return out
+
+
+_cors_extra = _parse_cors_origins(os.environ.get("CORS_EXTRA_ORIGINS", ""))
+_cors_explicit = _parse_cors_origins(os.environ.get("CORS_ALLOWED_ORIGINS", ""))
+CORS_ALLOWED_ORIGINS = list(
+    dict.fromkeys(
+        [
+            "http://localhost:5173",
+            "http://127.0.0.1:5173",
+            *_cors_extra,
+            *_cors_explicit,
+        ],
+    ),
+)
+
+# Optional: allow many Vercel preview URLs with one pattern, e.g.
+# CORS_ORIGIN_REGEX=^https://.*\.vercel\.app$
+_cors_origin_regex = os.environ.get("CORS_ORIGIN_REGEX", "").strip()
+CORS_ALLOWED_ORIGIN_REGEXES = [_cors_origin_regex] if _cors_origin_regex else []
+
+# Explicit allow-list for Authorization + JSON preflight (defaults cover this; keep explicit for clarity).
+CORS_ALLOW_HEADERS = list(default_headers)
+
+# Cache preflight in browser (seconds); reduces OPTIONS traffic.
+CORS_PREFLIGHT_MAX_AGE = int(os.environ.get("CORS_PREFLIGHT_MAX_AGE", "86400"))
 
 REST_FRAMEWORK = {
     "DEFAULT_RENDERER_CLASSES": [

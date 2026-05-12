@@ -43,8 +43,8 @@ Sign in with **`demodriver` / `demo12345`**, fill trip fields, **Plan trip & bui
 
 ## Hosted deploy (Vercel + API)
 
-1. **Backend** on Render/Railway/Fly: set `DJANGO_ALLOWED_HOSTS`, `DJANGO_SECRET_KEY`, `USE_POSTGRES` + `POSTGRES_*` if using Postgres, and **`CORS_EXTRA_ORIGINS=https://your-app.vercel.app`** (no trailing slash issues — use exact origin Vercel shows).
-2. **Frontend** on [Vercel](https://vercel.com): root directory **`frontend`**, build `npm run build`, output **`dist`**. Set env **`VITE_API_BASE_URL`** to your API origin, e.g. `https://your-api.onrender.com` (no path; app calls `/api/...` on that host).
+1. **Backend** on Render/Railway/Fly: set `DJANGO_SECRET_KEY`, **`DJANGO_ALLOWED_HOSTS`** to your API host (e.g. `my-api.onrender.com`), `USE_POSTGRES` + `POSTGRES_*` if using Postgres, and **`CORS_EXTRA_ORIGINS`** to the **exact** SPA origin(s) from the browser (e.g. `https://your-app.vercel.app`). No trailing slash; add both `www` and non-`www` if you use both. If preflight still fails on every Vercel preview URL, set **`CORS_ORIGIN_REGEX=^https://.*\.vercel\.app$`** (see `backend/.env.example`). A wrong or missing `DJANGO_ALLOWED_HOSTS` often surfaces as a generic “CORS / preflight” error because the 400 response has no CORS headers.
+2. **Frontend** on [Vercel](https://vercel.com): root directory **`frontend`**, build `npm run build`, output **`dist`**. Set env **`VITE_API_BASE_URL`** to your API origin, e.g. `https://your-api.onrender.com` (no trailing slash; no `/api` suffix; app calls `/api/...` on that host).
 
 `frontend/vercel.json` rewrites SPA routes to `index.html`.
 
