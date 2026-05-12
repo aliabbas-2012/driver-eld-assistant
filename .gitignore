@@ -14,4 +14,7 @@ frontend/dist/
 .vscode/
 .DS_Store
 run_api.sh
+backend/django.log
+backend/django.pid
+docker-compose.yml
 
