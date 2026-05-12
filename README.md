@@ -1,47 +1,29 @@
 # Driver ELD Assistant
 
-Full-stack scaffold for an **ELD trip planning** app (Django REST API + React SPA). Product requirements live in the [GitHub wiki — Requirements document](https://github.com/aliabbas-2012/driver-eld-assistant/wiki/Requirements%E2%80%90Document). FMCSA hours-of-service context follows the property-carrier HOS guide (Part 395).
+Full-stack **Django + React** app for **ELD trip planning**: trip inputs → **OSM map route** (Nominatim + OSRM) → **multi-day daily logs** with duty lines and graph data for the 24-hour grid.
 
-This repository currently delivers **backend persistence and authentication**, a **minimal React client** (health check wiring), **Postman** assets, and **optional PostgreSQL seed SQL**. Routing, geocoding (Nominatim), OSRM, HOS solver, map, canvas log grid, and PDF export from the wiki are **not** implemented yet.
+Product rules follow your brief: **property carrier**, **70 h / 8 days**, **fuel every 1000 miles (30 min)**, **1 h pickup & dropoff**, **55 mph** average, **30-minute break after 8 h driving**, **11 h drive / 14 h window** (simplified simulator — not a certified legal engine).
 
 ## Repository layout
 
-| Path | Role |
-|------|------|
-| `backend/` | Django 5, Django REST Framework, JWT (SimpleJWT), optional PostgreSQL |
-| `frontend/` | React 19 + TypeScript + Vite (dev proxy to API) |
-| `postman/` | Postman collection for API smoke tests |
-| `database/` | PostgreSQL seed script aligned with Django tables (`eld_demo_seed_pg.sql`) |
+| Path | Description |
+|------|-------------|
+| `backend/` | Django REST, JWT, models aligned with `database/driver_eld_assitant_all.sql` |
+| `frontend/` | React + Vite + Tailwind + Leaflet + trip planner UI |
+| `database/` | Reference PostgreSQL dump + `README.md` |
+| `postman/` | API collection |
 
-## Backend (summary of what is implemented)
+## Database schema
 
-- **ORM models**: `Carrier`, `Driver` (OneToOne to Django `User`), `Vehicle`, `Trip`, `TripStop`, `DailyLog`, `DutyChange`, `CycleDay` (rolling 8-day on-duty hours for 70h/8 display).
-- **Auth**: JWT access/refresh (`/api/auth/token/`, `/api/auth/token/refresh/`).
-- **Registration**: `POST /api/auth/register/` creates a user and driver profile (existing `carrier_id` or nested `carrier` payload).
-- **Trips**: CRUD-style list/create and retrieve/update for the authenticated driver’s trips; vehicle must belong to the driver’s carrier.
-- **Demo data**: `python manage.py seed_demo` creates `demodriver` / `demo12345`, a carrier, vehicle, and a sample Chicago → Indianapolis → Atlanta style trip with log lines.
+ORM tables match **`database/driver_eld_assitant_all.sql`** (`carrier`, `driver`, `vehicle`, `trailer`, `trip`, `daily_log`, `duty_status_change`, `fuel_stop`). See **`database/README.md`** for Django-only columns (`user_id`, `trip.driver_id`, `cycle_used_hours`, `route_geometry_json`).
 
-See **`backend/README.md`** for install, environment variables, and API table.
+## Quick start (local)
 
-## Frontend (summary)
-
-- Vite dev server with **`/api` proxy** to `http://127.0.0.1:8000`.
-- Minimal home page that calls **`GET /api/health/`** to verify the API is reachable.
-
-See **`frontend/README.md`** for scripts and dev workflow.
-
-## Postman
-
-Import **`postman/Driver_ELD_Assistant.postman_collection.json`**. Set the collection variable `base_url` (default `http://127.0.0.1:8000`). Run **POST Token** first; the test script stores `access` and `refresh` for authenticated requests.
-
-## Quick start
-
-**1. Backend**
+**Backend**
 
 ```bash
 cd backend
-python3 -m venv .venv
-source .venv/bin/activate
+python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env
 python manage.py migrate
@@ -49,7 +31,7 @@ python manage.py seed_demo
 python manage.py runserver
 ```
 
-**2. Frontend** (separate terminal)
+**Frontend**
 
 ```bash
 cd frontend
@@ -57,10 +39,43 @@ npm install
 npm run dev
 ```
 
-**3. PostgreSQL (optional)**
+Sign in with **`demodriver` / `demo12345`**, fill trip fields, **Plan trip & build logs**. First run calls Nominatim (1 req/s) + OSRM — may take **~10+ seconds**.
 
-Set in `backend/.env`: `USE_POSTGRES=true` and `POSTGRES_*` variables (see `backend/.env.example`). After `migrate`, you can load **`database/eld_demo_seed_pg.sql`** with `psql`, or still use **`seed_demo`** on PostgreSQL.
+## Hosted deploy (Vercel + API)
 
-## License
+1. **Backend** on Render/Railway/Fly: set `DJANGO_ALLOWED_HOSTS`, `DJANGO_SECRET_KEY`, `USE_POSTGRES` + `POSTGRES_*` if using Postgres, and **`CORS_EXTRA_ORIGINS=https://your-app.vercel.app`** (no trailing slash issues — use exact origin Vercel shows).
+2. **Frontend** on [Vercel](https://vercel.com): root directory **`frontend`**, build `npm run build`, output **`dist`**. Set env **`VITE_API_BASE_URL`** to your API origin, e.g. `https://your-api.onrender.com` (no path; app calls `/api/...` on that host).
 
-Add a license file if you plan to open-source this project.
+`frontend/vercel.json` rewrites SPA routes to `index.html`.
+
+## Deliverables checklist (assignment)
+
+| Item | Notes |
+|------|--------|
+| Hosted app | You deploy Vercel + API; configure CORS + `VITE_API_BASE_URL`. |
+| Loom (3–5 min) | Record walkthrough of UI + `backend/api/hos_plan.py` + models — not generated here. |
+| GitHub | Push this repository to your remote. |
+
+## API summary
+
+| Method | Path | Auth |
+|--------|------|------|
+| GET | `/api/health/` | No |
+| POST | `/api/auth/register/` | No |
+| POST | `/api/auth/token/` | No |
+| POST | `/api/auth/token/refresh/` | No |
+| GET | `/api/carriers/` | No |
+| GET | `/api/vehicles/` | JWT |
+| GET | `/api/me/` | JWT |
+| POST | `/api/geocode/` | JWT |
+| POST | `/api/route/` | JWT |
+| POST | `/api/hours/` | JWT |
+| POST | `/api/trips/plan/` | JWT |
+| GET | `/api/trips/` | JWT |
+| GET | `/api/trips/<id>/` | JWT |
+
+Postman: **`postman/Driver_ELD_Assistant.postman_collection.json`**.
+
+## Wiki
+
+Requirements context: [Requirements wiki](https://github.com/aliabbas-2012/driver-eld-assistant/wiki/Requirements%E2%80%90Document).

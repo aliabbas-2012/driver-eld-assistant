@@ -1,49 +1,36 @@
 # Driver ELD Assistant — Backend
 
-Django 5 + Django REST Framework + **JWT** (djangorestframework-simplejwt) + **django-cors-headers**.
+Django 5 + DRF + **SimpleJWT**. Tables mirror **`database/driver_eld_assitant_all.sql`** via `Meta.db_table`.
 
-## Environment
-
-Copy `.env.example` to `.env` and adjust.
-
-| Variable | Purpose |
-|----------|---------|
-| `DJANGO_SECRET_KEY` | Django secret; use a long random value in production (also used for JWT signing). |
-| `DJANGO_DEBUG` | `True` / `False` |
-| `DJANGO_ALLOWED_HOSTS` | Comma-separated hosts |
-| `USE_POSTGRES` | Set to `true` to use PostgreSQL instead of SQLite |
-| `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_HOST`, `POSTGRES_PORT` | PostgreSQL connection when `USE_POSTGRES=true` |
-
-## Commands
+## Setup
 
 ```bash
 source .venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env
 python manage.py migrate
-python manage.py seed_demo    # demodriver / demo12345 + demo trip
+python manage.py seed_demo
 python manage.py runserver
-python manage.py createsuperuser   # optional Django admin
 ```
 
-## HTTP API (`/api/`)
+## Environment
 
-| Method | Path | Auth | Description |
-|--------|------|------|-------------|
-| GET | `/api/health/` | No | Health check |
-| POST | `/api/auth/register/` | No | Register user + driver |
-| POST | `/api/auth/token/` | No | JWT login (`username`, `password`) |
-| POST | `/api/auth/token/refresh/` | No | Refresh JWT (`refresh`) |
-| GET | `/api/carriers/` | No | List carriers (for registration) |
-| GET | `/api/me/` | JWT | Current user and driver profile |
-| GET, POST | `/api/trips/` | JWT | List / create trips |
-| GET, PUT, PATCH | `/api/trips/<id>/` | JWT | Trip detail / update |
+| Variable | Purpose |
+|----------|---------|
+| `DJANGO_SECRET_KEY` | Django + JWT signing |
+| `DJANGO_DEBUG` | `True`/`False` |
+| `DJANGO_ALLOWED_HOSTS` | Comma-separated |
+| `CORS_EXTRA_ORIGINS` | e.g. `https://myapp.vercel.app` for production SPA |
+| `USE_POSTGRES` + `POSTGRES_*` | Optional PostgreSQL |
 
-Admin: `/admin/` (requires superuser).
+## API (`/api/`)
 
-## Database
+- `POST /trips/plan/` — body: `current_location`, `pickup_location`, `dropoff_location`, `cycle_used_hours`, `trip_start_date`, optional `vehicle_id`, `trailer_id`, shipping fields. Geocodes 3 stops, OSRM route, runs HOS planner, persists `trip`, `daily_log`, `duty_status_change`, `fuel_stop`.
+- `POST /geocode/` — `{ "address": "..." }`
+- `POST /route/` — three address strings → distance + GeoJSON coordinates
+- `POST /hours/` — `{ "cycle_used_hours", "additional_on_duty_hours"? }` → rough remaining on 70h clock
+- Auth: `POST /auth/register/` (nested `carrier` with `main_office_address` + `home_terminal_address`, or `carrier_id`), `POST /auth/token/`, `GET /me/`, `GET /vehicles/`, `GET /trips/`.
 
-- **Default**: SQLite `db.sqlite3` in this directory (gitignored).
-- **PostgreSQL**: Enable with `USE_POSTGRES` + `POSTGRES_*`. Optional raw seed: `../database/eld_demo_seed_pg.sql` (run after migrations; see file header).
+## HOS module
 
-## Python dependencies
-
-See `requirements.txt` (Django, DRF, SimpleJWT, cors-headers, python-dotenv, psycopg for PostgreSQL).
+`api/hos_plan.py` — day builder used by `api/trip_service.py`. Tuned for demo; validate against FMCSA / counsel before compliance use.

@@ -1,21 +1,29 @@
 # Driver ELD Assistant — Frontend
 
-React 19 + TypeScript + **Vite**. This app is the UI shell for the ELD assistant; most domain logic will eventually live here (trip form, map, log grid, PDF) per the [project wiki](https://github.com/aliabbas-2012/driver-eld-assistant/wiki/Requirements%E2%80%90Document).
+React 19 + Vite + **Tailwind CSS v4** + **Leaflet** (`react-leaflet`) + **Axios**.
 
 ## Scripts
 
 ```bash
 npm install
-npm run dev      # dev server (default http://localhost:5173)
-npm run build    # production build
-npm run preview  # preview production build
-npm run lint
+npm run dev
+npm run build
 ```
 
-## API proxy
+## Environment
 
-`vite.config.ts` proxies **`/api`** to **`http://127.0.0.1:8000`**, so the browser can call `/api/health/` and other endpoints while the Django server runs locally.
+| Variable | Purpose |
+|----------|---------|
+| (dev) | Vite proxies `/api` → `http://127.0.0.1:8000` |
+| `VITE_API_BASE_URL` | Production only: full API origin, e.g. `https://api.example.com` (requests go to `$VITE_API_BASE_URL/api/...`) |
 
-## Current UI
+## Vercel
 
-The home page fetches **`GET /api/health/`** to confirm the backend is running. Start the backend (`python manage.py runserver` from `backend/`) before relying on that check.
+- Root directory: **`frontend`**
+- Build: **`npm run build`**
+- Output: **`dist`**
+- Set **`VITE_API_BASE_URL`** to your deployed Django base URL.
+
+## UI
+
+Login → trip form (current / pickup / dropoff / cycle used / start date) → **Plan** loads map + per-day log sheets (table + canvas grid from `log_grid_data`).

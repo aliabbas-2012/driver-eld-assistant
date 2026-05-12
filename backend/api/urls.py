@@ -10,6 +10,11 @@ urlpatterns = [
     path("auth/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
     path("me/", views.MeView.as_view(), name="me"),
     path("carriers/", views.CarrierListView.as_view(), name="carrier-list"),
-    path("trips/", views.TripListCreateView.as_view(), name="trip-list-create"),
+    path("vehicles/", views.VehicleListView.as_view(), name="vehicle-list"),
+    path("geocode/", views.GeocodeView.as_view(), name="geocode"),
+    path("route/", views.RouteView.as_view(), name="route"),
+    path("hours/", views.HoursView.as_view(), name="hours"),
+    path("trips/plan/", views.TripPlanView.as_view(), name="trip-plan"),
+    path("trips/", views.TripListView.as_view(), name="trip-list"),
     path("trips/<int:pk>/", views.TripDetailView.as_view(), name="trip-detail"),
 ]

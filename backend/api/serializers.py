@@ -6,9 +6,10 @@ from .models import (
     Carrier,
     DailyLog,
     Driver,
-    DutyChange,
+    DutyStatusChange,
+    FuelStop,
+    Trailer,
     Trip,
-    TripStop,
     Vehicle,
 )
 
@@ -19,15 +20,14 @@ class CarrierSerializer(serializers.ModelSerializer):
         fields = (
             "id",
             "name",
-            "main_office_street",
-            "main_office_city",
-            "main_office_state",
-            "main_office_zip",
-            "home_terminal_street",
-            "home_terminal_city",
-            "home_terminal_state",
-            "home_terminal_zip",
+            "main_office_address",
+            "home_terminal_address",
+            "usdot_number",
+            "mc_number",
+            "hos_schedule",
+            "created_at",
         )
+        read_only_fields = ("id", "created_at")
 
 
 class VehicleSerializer(serializers.ModelSerializer):
@@ -36,19 +36,35 @@ class VehicleSerializer(serializers.ModelSerializer):
         fields = (
             "id",
             "carrier",
-            "tractor_number",
-            "tractor_plate",
-            "tractor_plate_state",
-            "trailer_number",
-            "trailer_plate",
-            "trailer_plate_state",
+            "truck_number",
+            "license_plate",
+            "license_state",
+            "year",
+            "make",
+            "model",
+            "has_sleeper_berth",
+            "created_at",
         )
-        read_only_fields = ("id",)
+        read_only_fields = ("id", "created_at")
+
+
+class TrailerSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Trailer
+        fields = (
+            "id",
+            "carrier",
+            "trailer_number",
+            "license_plate",
+            "license_state",
+            "trailer_type",
+            "created_at",
+        )
+        read_only_fields = ("id", "created_at")
 
 
 class DriverSerializer(serializers.ModelSerializer):
     username = serializers.CharField(source="user.username", read_only=True)
-    email = serializers.EmailField(source="user.email", read_only=True)
 
     class Meta:
         model = Driver
@@ -56,155 +72,143 @@ class DriverSerializer(serializers.ModelSerializer):
             "id",
             "user",
             "username",
-            "email",
             "carrier",
-            "full_name",
-            "co_driver_name",
+            "first_name",
+            "last_name",
+            "cdl_number",
             "license_state",
-            "license_number",
+            "hire_date",
+            "using_34_restart",
             "created_at",
         )
         read_only_fields = ("id", "user", "created_at")
 
 
-class TripStopSerializer(serializers.ModelSerializer):
+class DutyStatusChangeSerializer(serializers.ModelSerializer):
     class Meta:
-        model = TripStop
+        model = DutyStatusChange
         fields = (
             "id",
-            "seq",
-            "stop_type",
-            "place_name",
-            "address",
-            "lat",
-            "lng",
-            "planned_arrive_local",
-            "planned_depart_local",
-            "dwell_minutes",
+            "status",
+            "start_time",
+            "end_time",
+            "duration_hours",
+            "location",
+            "location_lat",
+            "location_lng",
+            "remarks",
         )
-        read_only_fields = ("id",)
 
 
-class DutyChangeSerializer(serializers.ModelSerializer):
+class FuelStopSerializer(serializers.ModelSerializer):
     class Meta:
-        model = DutyChange
+        model = FuelStop
         fields = (
             "id",
-            "changed_at_local",
-            "duty_status",
-            "location_remark",
-            "seq",
+            "location",
+            "gallons",
+            "cost",
+            "odometer_reading",
+            "start_time",
+            "end_time",
         )
-        read_only_fields = ("id",)
 
 
 class DailyLogSerializer(serializers.ModelSerializer):
-    duty_changes = DutyChangeSerializer(many=True, read_only=True)
+    duty_changes = DutyStatusChangeSerializer(many=True, read_only=True)
+    fuel_stops = FuelStopSerializer(many=True, read_only=True)
 
     class Meta:
         model = DailyLog
         fields = (
             "id",
+            "day_number",
             "log_date",
-            "timezone",
-            "total_miles_driving",
-            "odometer_start",
-            "odometer_end",
-            "total_on_duty_hours",
-            "signature_line",
+            "total_miles_driven",
+            "starting_odometer",
+            "ending_odometer",
+            "driving_hours",
+            "on_duty_hours",
+            "off_duty_hours",
+            "sleeper_berth_hours",
+            "thirty_min_break_taken",
+            "thirty_min_break_time",
+            "rolling_8day_total",
+            "hours_remaining_70",
+            "log_grid_data",
+            "shipping_doc_number",
+            "shipper_name",
+            "commodity",
+            "remarks",
             "duty_changes",
+            "fuel_stops",
         )
-        read_only_fields = ("id", "duty_changes")
 
 
 class TripSerializer(serializers.ModelSerializer):
-    stops = TripStopSerializer(many=True, read_only=True)
     daily_logs = DailyLogSerializer(many=True, read_only=True)
 
     class Meta:
         model = Trip
         fields = (
             "id",
+            "carrier",
             "driver",
             "vehicle",
+            "trailer",
             "current_location",
+            "current_location_lat",
+            "current_location_lng",
             "pickup_location",
+            "pickup_location_lat",
+            "pickup_location_lng",
             "dropoff_location",
-            "current_lat",
-            "current_lng",
-            "pickup_lat",
-            "pickup_lng",
-            "dropoff_lat",
-            "dropoff_lng",
-            "miles_current_to_pickup",
-            "miles_pickup_to_dropoff",
-            "total_route_miles",
-            "estimated_driving_hours",
-            "cycle_used_hours_8day",
-            "assumed_avg_mph",
-            "daily_start_local_time",
-            "timezone",
-            "status",
-            "shipping_document_number",
-            "shipper_name",
-            "commodity",
-            "notes",
+            "dropoff_location_lat",
+            "dropoff_location_lng",
+            "total_distance_miles",
+            "total_driving_hours",
+            "total_days",
+            "trip_start_date",
+            "trip_end_date",
+            "cycle_used_hours",
+            "route_geometry_json",
             "created_at",
-            "stops",
+            "updated_at",
             "daily_logs",
         )
-        read_only_fields = (
-            "id",
-            "driver",
-            "created_at",
-            "stops",
-            "daily_logs",
-        )
+        read_only_fields = ("id", "driver", "created_at", "updated_at", "daily_logs")
 
 
-class TripWriteSerializer(serializers.ModelSerializer):
-    """Create/update trip; driver set in view from JWT user."""
+class GeocodeSerializer(serializers.Serializer):
+    address = serializers.CharField(max_length=500)
 
-    class Meta:
-        model = Trip
-        fields = (
-            "vehicle",
-            "current_location",
-            "pickup_location",
-            "dropoff_location",
-            "current_lat",
-            "current_lng",
-            "pickup_lat",
-            "pickup_lng",
-            "dropoff_lat",
-            "dropoff_lng",
-            "miles_current_to_pickup",
-            "miles_pickup_to_dropoff",
-            "total_route_miles",
-            "estimated_driving_hours",
-            "cycle_used_hours_8day",
-            "assumed_avg_mph",
-            "daily_start_local_time",
-            "timezone",
-            "status",
-            "shipping_document_number",
-            "shipper_name",
-            "commodity",
-            "notes",
-        )
 
-    def validate_vehicle(self, vehicle: Vehicle) -> Vehicle:
-        request = self.context.get("request")
-        if not request or not request.user.is_authenticated:
-            raise serializers.ValidationError("Authentication required.")
-        driver = getattr(request.user, "driver_profile", None)
-        if not driver:
-            raise serializers.ValidationError("No driver profile for this user.")
-        if vehicle.carrier_id != driver.carrier_id:
-            raise serializers.ValidationError(
-                "Vehicle must belong to your carrier.",
-            )
-        return vehicle
+class RouteSerializer(serializers.Serializer):
+    current_location = serializers.CharField(max_length=500)
+    pickup_location = serializers.CharField(max_length=500)
+    dropoff_location = serializers.CharField(max_length=500)
+
+
+class HoursSerializer(serializers.Serializer):
+    cycle_used_hours = serializers.DecimalField(max_digits=5, decimal_places=1)
+    additional_on_duty_hours = serializers.DecimalField(
+        max_digits=5, decimal_places=1, required=False,
+    )
+
+
+class TripPlanSerializer(serializers.Serializer):
+    current_location = serializers.CharField(max_length=500)
+    pickup_location = serializers.CharField(max_length=500)
+    dropoff_location = serializers.CharField(max_length=500)
+    cycle_used_hours = serializers.DecimalField(max_digits=5, decimal_places=1)
+    trip_start_date = serializers.DateField()
+    vehicle_id = serializers.IntegerField(required=False, allow_null=True)
+    trailer_id = serializers.IntegerField(required=False, allow_null=True)
+    shipping_doc_number = serializers.CharField(
+        max_length=100, required=False, default="",
+    )
+    shipper_name = serializers.CharField(max_length=200, required=False, default="")
+    commodity = serializers.CharField(max_length=200, required=False, default="")
 
 
 class RegisterSerializer(serializers.Serializer):
@@ -212,12 +216,10 @@ class RegisterSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField(write_only=True, min_length=8)
     password_confirm = serializers.CharField(write_only=True, min_length=8)
-    full_name = serializers.CharField(max_length=255)
-    co_driver_name = serializers.CharField(
-        max_length=255, required=False, allow_blank=True,
-    )
+    first_name = serializers.CharField(max_length=100)
+    last_name = serializers.CharField(max_length=100)
+    cdl_number = serializers.CharField(max_length=50)
     license_state = serializers.CharField(max_length=2)
-    license_number = serializers.CharField(max_length=64)
     carrier_id = serializers.IntegerField(required=False, allow_null=True)
     carrier = CarrierSerializer(required=False)
 
@@ -234,7 +236,7 @@ class RegisterSerializer(serializers.Serializer):
             )
         if not cid and not cdata:
             raise serializers.ValidationError(
-                "Provide carrier_id for an existing carrier or nested carrier to create one.",
+                "Provide carrier_id or nested carrier.",
             )
         if cdata:
             cs = CarrierSerializer(data=cdata)
@@ -273,10 +275,9 @@ class RegisterSerializer(serializers.Serializer):
         driver = Driver.objects.create(
             user=user,
             carrier=carrier,
-            full_name=validated_data["full_name"],
-            co_driver_name=validated_data.get("co_driver_name") or "",
+            first_name=validated_data["first_name"],
+            last_name=validated_data["last_name"],
+            cdl_number=validated_data["cdl_number"],
             license_state=validated_data["license_state"].upper(),
-            license_number=validated_data["license_number"],
         )
         return driver
-
