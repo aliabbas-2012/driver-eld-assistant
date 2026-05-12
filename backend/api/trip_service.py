@@ -87,6 +87,17 @@ def create_planned_trip(
         trip_end_date=days[-1].log_date if days else trip_start_date,
         cycle_used_hours=Decimal(str(cycle_used_hours)),
         route_geometry_json={"type": "LineString", "coordinates": rt["coordinates"]},
+        route_instructions_json={
+            "driving_steps": rt.get("instructions") or [],
+            "hos_stops": summary.get("map_stops") or [],
+            "hos_summary": {
+                "total_miles": summary.get("total_miles"),
+                "total_drive_hours": summary.get("total_drive_hours"),
+                "days": summary.get("days"),
+                "cycle_used_start": summary.get("cycle_used_start"),
+                "hours_remaining_70_approx": summary.get("hours_remaining_70_approx"),
+            },
+        },
     )
 
     for day in days:

@@ -53,8 +53,10 @@ Sign in with **`demodriver` / `demo12345`**, fill trip fields, **Plan trip & bui
 | Item | Notes |
 |------|--------|
 | Hosted app | You deploy Vercel + API; configure CORS + `VITE_API_BASE_URL`. |
-| Loom (3–5 min) | Record walkthrough of UI + `backend/api/hos_plan.py` + models — not generated here. |
+| Loom (3–5 min) | Step-by-step runbook + suggested talk track: **`docs/SUBMIT_AND_LOOM.md`**. |
 | GitHub | Push this repository to your remote. |
+
+Full submission steps (local run, deploy, Git push, Loom outline): **`docs/SUBMIT_AND_LOOM.md`**.
 
 ## API summary
 

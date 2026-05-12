@@ -172,6 +172,7 @@ class TripSerializer(serializers.ModelSerializer):
             "trip_end_date",
             "cycle_used_hours",
             "route_geometry_json",
+            "route_instructions_json",
             "created_at",
             "updated_at",
             "daily_logs",

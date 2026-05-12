@@ -13,3 +13,5 @@ frontend/dist/
 .idea/
 .vscode/
 .DS_Store
+run_api.sh
+

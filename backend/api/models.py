@@ -178,6 +178,11 @@ class Trip(models.Model):
         blank=True,
         help_text="Decoded OSRM coordinates [[lng,lat], ...].",
     )
+    route_instructions_json = models.JSONField(
+        null=True,
+        blank=True,
+        help_text="OSRM turn-by-turn steps + planned HOS stops summary.",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -249,7 +254,9 @@ class DutyStatusChange(models.Model):
         ('on_duty_not_driving', 'On Duty (Not Driving)'),
     ]
 
-    daily_log = models.ForeignKey(DailyLog, on_delete=models.CASCADE, related_name='status_changes')
+    daily_log = models.ForeignKey(
+        DailyLog, on_delete=models.CASCADE, related_name="duty_changes"
+    )
     status = models.CharField(max_length=20)
     start_time = models.TimeField()
     end_time = models.TimeField()

@@ -95,6 +95,7 @@ class RouteView(APIView):
                 "duration_seconds": rt["duration_seconds"],
                 "geometry": rt["coordinates"],
                 "leg_miles": [round(x, 2) for x in rt.get("leg_miles", [])],
+                "instructions": rt.get("instructions") or [],
             },
         )
 
@@ -150,6 +151,11 @@ class TripPlanView(APIView):
                 {"detail": f"Planning failed: {e!s}"},
                 status=status.HTTP_502_BAD_GATEWAY,
             )
+        # Reload with nested prefetch so the 201 body matches GET /trips/<id>/ (daily_logs + duty_changes).
+        trip = Trip.objects.prefetch_related(
+            "daily_logs__duty_changes",
+            "daily_logs__fuel_stops",
+        ).get(pk=trip.pk)
         return Response(
             TripSerializer(trip).data,
             status=status.HTTP_201_CREATED,
