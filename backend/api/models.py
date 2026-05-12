@@ -12,10 +12,13 @@ class Carrier(models.Model):
     name = models.CharField(max_length=200)
     main_office_address = models.CharField(max_length=500)
     home_terminal_address = models.CharField(max_length=500)
-    usdot_number = models.CharField(max_length=20, blank=True)
-    mc_number = models.CharField(max_length=20, blank=True)
+    # Add null=True here
+    usdot_number = models.CharField(max_length=20, blank=True, null=True)
+    mc_number = models.CharField(max_length=20, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     hos_schedule = models.CharField(max_length=10, default="70/8")
+
+    # ... rest of the class
 
     class Meta:
         db_table = "carrier"
@@ -62,18 +65,15 @@ class Driver(models.Model):
 
 class Vehicle(models.Model):
     carrier = models.ForeignKey(
-        Carrier,
-        on_delete=models.CASCADE,
-        related_name="vehicles",
-        null=True,
-        blank=True,
+        Carrier, on_delete=models.CASCADE, related_name="vehicles", null=True, blank=True
     )
     truck_number = models.CharField(max_length=50, blank=True)
     license_plate = models.CharField(max_length=20)
     license_state = models.CharField(max_length=2)
+    # Changed: Ensure these are nullable to match dump data
     year = models.IntegerField(null=True, blank=True)
-    make = models.CharField(max_length=50, blank=True)
-    model = models.CharField(max_length=50, blank=True)
+    make = models.CharField(max_length=50, blank=True, null=True)
+    model = models.CharField(max_length=50, blank=True, null=True)
     has_sleeper_berth = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -242,13 +242,14 @@ class DailyLog(models.Model):
 
 
 class DutyStatusChange(models.Model):
-    daily_log = models.ForeignKey(
-        DailyLog,
-        on_delete=models.CASCADE,
-        related_name="duty_changes",
-        null=True,
-        blank=True,
-    )
+    STATUS_CHOICES = [
+        ('off_duty', 'Off Duty'),
+        ('sleeper_berth', 'Sleeper Berth'),
+        ('driving', 'Driving'),
+        ('on_duty_not_driving', 'On Duty (Not Driving)'),
+    ]
+
+    daily_log = models.ForeignKey(DailyLog, on_delete=models.CASCADE, related_name='status_changes')
     status = models.CharField(max_length=20)
     start_time = models.TimeField()
     end_time = models.TimeField()
